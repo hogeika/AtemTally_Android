@@ -1,0 +1,31 @@
+TASK org.hogeika.android.atemtally id=31
+  ACTIVITY org.hogeika.android.atemtally/.MainActivity 3e33f020 pid=1076
+    Local FragmentActivity 1f5b6d8f State:
+      mCreated=truemResumed=true mStopped=false mReallyStopped=false
+      mLoadersStarted=true
+    FragmentManager misc state:
+      mActivity=org.hogeika.android.atemtally.MainActivity@1f5b6d8f
+      mContainer=android.support.v4.app.FragmentActivity$2@396e3c6
+      mCurState=5 mStateSaved=false mDestroyed=false
+    View Hierarchy:
+      com.android.internal.policy.impl.PhoneWindow$DecorView{31c97f87 V.E..... ... 0,0-480,728}
+        android.widget.LinearLayout{1109eb4 V.E..... ... 0,0-480,728}
+          android.view.ViewStub{37a69add G.E..... ... 0,0-0,0 #102036e}
+          android.widget.FrameLayout{190d7652 V.E..... ... 0,38-480,728}
+            android.support.v7.internal.widget.ActionBarOverlayLayout{1a348d23 V.E..... ... 0,0-480,690 #7f0c002f app:id/decor_content_parent}
+              android.support.v7.internal.widget.NativeActionModeAwareLayout{3772f220 V.E..... ... 0,84-480,690 #1020002 android:id/content}
+                android.widget.RelativeLayout{67707d9 V.E..... ... 0,0-480,606}
+                  android.widget.LinearLayout{2fe8a59e V.E..... ... 24,24-456,582}
+                    android.widget.TextView{3eb8d87f V.ED.... ... 0,0-141,29 #7f0c003f app:id/textView}
+                    android.widget.EditText{37e5104c VFED..CL F.. 0,29-432,91 #7f0c0040 app:id/et_server}
+                    android.widget.TextView{3e474895 V.ED.... ... 0,91-110,120 #7f0c0041 app:id/textView2}
+                    android.widget.Spinner{34b57daa VFED..C. ... 0,120-117,156 #7f0c0042 app:id/spin_camera}
+                      android.widget.TextView{190c7d9b V.ED.... ... 0,1-93,34 #1020014 android:id/text1}
+                    android.widget.Button{3978e538 VFED..C. ... 0,156-132,228 #7f0c0043 app:id/btn_start}
+                    android.widget.Button{fa0d911 VF.D..C. ... 0,228-132,300 #7f0c0044 app:id/btn_stop}
+              android.support.v7.internal.widget.ActionBarContainer{1dc5ca76 V.ED.... ... 0,0-480,84 #7f0c0030 app:id/action_bar_container}
+                android.support.v7.widget.Toolbar{3e2b5877 V.E..... ... 0,0-480,84 #7f0c0031 app:id/action_bar}
+                  android.widget.TextView{10731ce4 V.ED.... ... 24,21-166,62}
+                  android.support.v7.widget.ActionMenuView{1028f54d V.E..... ... 426,0-480,84}
+                    android.support.v7.widget.ActionMenuPresenter$OverflowMenuButton{22bc1802 VFED..C. ... 0,6-54,78}
+                android.support.v7.internal.widget.ActionBarContextView{2cf30513 G.E..... ... 0,0-0,0 #7f0c0032 app:id/action_context_bar}
