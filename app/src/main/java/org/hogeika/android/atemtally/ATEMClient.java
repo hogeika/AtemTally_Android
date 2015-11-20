@@ -21,7 +21,8 @@ import java.util.Set;
  */
 public class ATEMClient {
     protected final int CONECT_TIMEOUT = 10000;
-    protected final int SO_TIMEOUT = 5000;
+    protected final int SO_TIMEOUT = 300;
+    protected final int SLEEP = 100;
 
     protected static final byte CONNECT_HELLO[] = {0x10, 0x14, 0x53, (byte)0xAB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3A, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
     protected static final byte CONNECT_HELLO_ANSWER[] = {(byte)0x80, 0x0c, 0x53, (byte)0xab, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00 };
@@ -162,7 +163,7 @@ public class ATEMClient {
                     notifyConnectError();
                     return Boolean.FALSE;
                 }
-            } while((System.currentTimeMillis() - start_time) > CONECT_TIMEOUT);
+            } while((System.currentTimeMillis() - start_time) < CONECT_TIMEOUT);
             notifyConnectTimeout();
             return Boolean.FALSE;
         }
@@ -187,6 +188,7 @@ public class ATEMClient {
             byte session_id[] = new byte[2];
             byte last_remote_packet_id[] = new byte[2];
             boolean has_initialized = false;
+            boolean hello_answerd = true;
 
             while(!isCancelled()){
                 try {
@@ -194,6 +196,14 @@ public class ATEMClient {
                     if (data == null){
                         continue;
                     }
+                    if (!hello_answerd) {
+                        if (data.length == 20) {
+                            System.out.println("Send Hello Answer");
+                            send(CONNECT_HELLO_ANSWER);
+                            hello_answerd = true;
+                        }
+                    }
+
                     int packet_length = word((byte) (data[0] & 0b00000111),data[1]);
                     session_id[0] = data[2];
                     session_id[1] = data[3];
@@ -208,18 +218,24 @@ public class ATEMClient {
 
                         if (!has_initialized && packet_length == 12){
                             has_initialized = true;
-                            System.out.printf("Session ID: %x02:%x02", session_id[0], session_id[1] );
+//                            System.out.printf("Session ID: %x02:%x02\n", session_id[0], session_id[1] );
                         }
                         if ((packet_length > 12) && !cmd_init)	{
                             parsePacket(data);
                         }
                         if (has_initialized && cmd_ack) {
-                            System.out.printf("ACK, rpID: %x02:%x02", last_remote_packet_id[0], last_remote_packet_id[1]);
-                            sendAnswerPacket(session_id, last_remote_packet_id);
+//                            System.out.printf("ACK, rpID: %x02:%x02\n", last_remote_packet_id[0], last_remote_packet_id[1]);
+//                            sendAnswerPacket(session_id, last_remote_packet_id);
                         }
                     }
                 } catch (SocketTimeoutException e){
-                    // no packet
+//                    try {
+//                        Thread.sleep(SLEEP);
+//                    } catch (InterruptedException e2) {
+//                    }
+                    send(CONNECT_HELLO);
+                    System.out.println("Send Hello");
+                    hello_answerd = false;
                 } catch (IOException e) {
                     e.printStackTrace();
                     notifyError();
@@ -246,21 +262,25 @@ public class ATEMClient {
                 if (cmd_length > 8) {
                     index += 8;
                     if (cmd_str.equals("PrgI")) {
-                        if (!ver42()){
-                            prg_i = data[index + 1];
-                        } else {
-                            prg_i = word(data[index + 2], data[index + 3]);
+                        if (data[index] == 0) {
+                            if (!ver42()) {
+                                prg_i = data[index + 1];
+                            } else {
+                                prg_i = word(data[index + 2], data[index + 3]);
+                            }
+                            System.out.printf("Program Bus : %d\n", prg_i);
+                            notifyTallyChange(prg_i, prv_i);
                         }
-                        System.out.printf("Program Bus : %d", prg_i);
-                        notifyTallyChange(prg_i, prv_i);
                     } else if (cmd_str.equals("PrvI")) {
-                        if (!ver42()){
-                            prv_i = data[index + 1];
-                        } else {
-                            prv_i = word(data[index + 2], data[index + 3]);
+                        if (data[index] == 0) {
+                            if (!ver42()) {
+                                prv_i = data[index + 1];
+                            } else {
+                                prv_i = word(data[index + 2], data[index + 3]);
+                            }
+                            System.out.printf("Preview Bus : %d\n", prv_i);
+                            notifyTallyChange(prg_i, prv_i);
                         }
-                        System.out.printf("Preview Bus : %d", prv_i);
-                        notifyTallyChange(prg_i, prv_i);
                     } else if (cmd_str.equals("TlIn")) {
                         int count = data[index + 1];
                         if(count > 16) {
@@ -270,16 +290,20 @@ public class ATEMClient {
                             byte flag = data[2 + i];
                             if ((flag & 0x01) != 0){
                                 prg_array[i] = true;
+//                                System.out.printf("Program Bus : %d\n", i+1);
+//                                notifyTallyChange(i+1, 0);
                             }else{
                                 prg_array[i] = false;
                             }
                             if ((flag & 0x02) != 0){
                                 prv_array[i] = true;
+//                                System.out.printf("Preview Bus : %d\n", i+1);
+//                                notifyTallyChange(0, i+1);
                             }else{
                                 prv_array[i] = false;
                             }
                         }
-                        System.out.println("Tally updated:");
+                        System.out.println("Tally updated:\n");
                     } else if (cmd_str.equals("_ver")){
                         ver_m = data[index + 1];
                         ver_l = data[index + 3];
@@ -337,10 +361,11 @@ public class ATEMClient {
         buf[11] = 0;
 
         send(buf);
+        System.out.println("Send Answer packet.");
     }
 
     private byte[] receive() throws IOException {
-        byte buf[] = new byte[256];
+        byte buf[] = new byte[40960];
         DatagramPacket packet= new DatagramPacket(buf,buf.length);
         socket.receive(packet);//受信 & wait
 //        SocketAddress  sockAddress = packet.getSocketAddress(); //送信元情報取得
