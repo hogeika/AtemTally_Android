@@ -27,20 +27,39 @@ public class MainActivity extends ActionBarActivity {
     private Button btn_stop;
 
     ATEMClient.Callback callback = new ATEMClient.AbstructCallback(){
-
         @Override
-        public void onConnect() {
-            super.onConnect();
-            int cam_no = spin_camera.getSelectedItemPosition() + 1;
-            Intent intent = new Intent(MainActivity.this, LayerService.class);
-            intent.putExtra(LayerService.EXTRA_CAM_NO, cam_no);
-            startService(intent);
-
+        public void onStart() {
+            super.onStart();
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     btn_start.setEnabled(false);
                     btn_stop.setEnabled(true);
+                    spin_camera.setEnabled(false);
+                }
+            });
+        }
+
+        @Override
+        public void onStop() {
+            super.onStop();
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    btn_start.setEnabled(true);
+                    btn_stop.setEnabled(false);
+                    spin_camera.setEnabled(true);
+                }
+            });
+        }
+
+        @Override
+        public void onConnect() {
+            super.onConnect();
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
                     Toast.makeText(MainActivity.this, "Connected Now", Toast.LENGTH_LONG).show();
                 }
             });
@@ -63,8 +82,6 @@ public class MainActivity extends ActionBarActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    btn_start.setEnabled(true);
-                    btn_stop.setEnabled(false);
                     Toast.makeText(MainActivity.this, "Connection Timeout", Toast.LENGTH_LONG).show();
                 }
             });
@@ -83,7 +100,13 @@ public class MainActivity extends ActionBarActivity {
         btn_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                client.connect(et_server.getText().toString());
+                String remote_addr = et_server.getText().toString();
+                int cam_no = spin_camera.getSelectedItemPosition() + 1;
+
+                Intent intent = new Intent(MainActivity.this, LayerService.class);
+                intent.putExtra(LayerService.EXTRA_REMOTE_ADDR, remote_addr);
+                intent.putExtra(LayerService.EXTRA_CAM_NO, cam_no);
+                startService(intent);
             }
         });
         btn_stop = (Button)findViewById(R.id.btn_stop);
@@ -91,16 +114,8 @@ public class MainActivity extends ActionBarActivity {
             @Override
             public void onClick(View v) {
                 stopService(new Intent(MainActivity.this, LayerService.class));
-                client.stop();
             }
         });
-        if (client.isConnected()){
-            btn_start.setEnabled(false);
-            btn_stop.setEnabled(true);
-        } else {
-            btn_start.setEnabled(true);
-            btn_stop.setEnabled(false);
-        }
 
         ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_spinner_item);
         adapter.add("Cam 1");
@@ -112,6 +127,16 @@ public class MainActivity extends ActionBarActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spin_camera = (Spinner)findViewById(R.id.spin_camera);
         spin_camera.setAdapter(adapter);
+
+        if (client.isRunning()){
+            btn_start.setEnabled(false);
+            btn_stop.setEnabled(true);
+            spin_camera.setEnabled(false);
+        } else {
+            btn_start.setEnabled(true);
+            btn_stop.setEnabled(false);
+            spin_camera.setEnabled(true);
+        }
 
         client.addCallback(callback);
     }

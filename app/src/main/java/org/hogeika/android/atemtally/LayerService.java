@@ -15,10 +15,12 @@ import android.view.View;
 import android.view.WindowManager;
 
 public class LayerService extends Service {
+    static public final String EXTRA_REMOTE_ADDR = "remote_addr";
     static public final String EXTRA_CAM_NO = "cam_no";
 
     MyApplication application;
     ATEMClient client;
+    String remote_addr;
     int cam_no = 0;
 
     View view;
@@ -46,9 +48,35 @@ public class LayerService extends Service {
         }
 
         @Override
+        public void onConnect() {
+            super.onConnect();
+            changeBG(bg_white);
+        }
+
+        @Override
+        public void onConnectionLoss() {
+            super.onConnectionLoss();
+            changeBG(bg_yellow);
+        }
+
+        @Override
+        public void onConnectError(){
+            super.onConnectTimeout();
+            client.stop();
+            stopSelf();
+        }
+
+        @Override
+        public void onConnectTimeout(){
+            super.onConnectTimeout();
+            client.stop();
+            stopSelf();
+        }
+
+        @Override
         public void onError() {
             super.onError();
-            changeBG(bg_yellow);
+            client.stop();
             stopSelf();
         }
     };
@@ -65,7 +93,16 @@ public class LayerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId){
         super.onStartCommand(intent, flags, startId);
-        cam_no = intent.getIntExtra(EXTRA_CAM_NO, 0);
+        if (intent != null) {
+            remote_addr = null;
+            remote_addr = intent.getStringExtra(EXTRA_REMOTE_ADDR);
+            if (remote_addr == null) {
+                remote_addr = "192.168.10.240"; // default address
+            }
+            cam_no = intent.getIntExtra(EXTRA_CAM_NO, 0);
+        } else {
+            System.out.print("UGH!");
+        }
 
         application = (MyApplication)getApplication();
         client = application.getATEMClient();
@@ -95,10 +132,10 @@ public class LayerService extends Service {
         bg_white = res.getDrawable(R.drawable.border_white);
         bg_yellow = res.getDrawable(R.drawable.border_yellow);
 
-        changeBG(bg_white);
+        changeBG(bg_yellow);
 
         client.addCallback(callback);
-        client.start();
+        client.start(remote_addr);
         /*
         task = new AsyncTask() {
             @Override
@@ -151,10 +188,11 @@ public class LayerService extends Service {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
+        client.stop();
         client.removeCallback(callback);
 //        task.cancel(true);
         wm.removeView(view);
+        super.onDestroy();
     }
 
     @Override
