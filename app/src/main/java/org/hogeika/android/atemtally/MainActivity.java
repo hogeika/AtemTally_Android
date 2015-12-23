@@ -1,30 +1,31 @@
 package org.hogeika.android.atemtally;
 
 import android.content.Intent;
-import android.support.v7.app.ActionBarActivity;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 
 public class MainActivity extends ActionBarActivity {
     MyApplication application;
     ATEMClient client;
 
+    private View view_bg;
     private EditText et_server;
     private Spinner spin_camera;
     private Button btn_start;
     private Button btn_stop;
+
+    private int cam_no;
 
     ATEMClient.Callback callback = new ATEMClient.AbstructCallback(){
         @Override
@@ -36,6 +37,8 @@ public class MainActivity extends ActionBarActivity {
                     btn_start.setEnabled(false);
                     btn_stop.setEnabled(true);
                     spin_camera.setEnabled(false);
+                    // Keep screen on
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 }
             });
         }
@@ -49,8 +52,39 @@ public class MainActivity extends ActionBarActivity {
                     btn_start.setEnabled(true);
                     btn_stop.setEnabled(false);
                     spin_camera.setEnabled(true);
+                    // Keep screen off
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 }
             });
+            changeBG(Color.TRANSPARENT);
+        }
+
+        private void changeBG(final int color){
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    view_bg.setBackgroundColor(color);
+                }
+            });
+        }
+        @Override
+        public void onTallyChange(int pgm, int sby) {
+            super.onTallyChange(pgm, sby);
+            if (pgm == cam_no){
+                changeBG(Color.RED);
+            }
+            else if (sby == cam_no){
+                changeBG(Color.GREEN);
+            }
+            else {
+                changeBG(Color.TRANSPARENT);
+            }
+        }
+
+        @Override
+        public void onConnectionLoss() {
+            super.onConnectionLoss();
+            changeBG(Color.YELLOW);
         }
 
         @Override
@@ -95,13 +129,14 @@ public class MainActivity extends ActionBarActivity {
         application = (MyApplication)getApplication();
         client = application.getATEMClient();
 
+        view_bg = findViewById(R.id.view_bg);
         et_server = (EditText)findViewById(R.id.et_server);
         btn_start = (Button)findViewById(R.id.btn_start);
         btn_start.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String remote_addr = et_server.getText().toString();
-                int cam_no = spin_camera.getSelectedItemPosition() + 1;
+                cam_no = spin_camera.getSelectedItemPosition() + 1;
 
                 Intent intent = new Intent(MainActivity.this, LayerService.class);
                 intent.putExtra(LayerService.EXTRA_REMOTE_ADDR, remote_addr);

@@ -7,8 +7,8 @@ android {
         applicationId "org.hogeika.android.atemtally"
         minSdkVersion 16
         targetSdkVersion 22
-        versionCode 2
-        versionName '0.9'
+        versionCode 3
+        versionName '0.9.1'
     }
     buildTypes {
         release {
